@@ -4,6 +4,37 @@ import Grid, { toArr, toKey } from "./grid"
 const NUM_COLS = 9
 const NUM_ROWS = 9
 
+function isInBox(key, boxKey) {
+  let [r, c] = toArr(key)
+  let [boxR1, boxC1] = toArr(boxKey)
+  let boxR = Math.floor(r / 3)
+  let boxC = Math.floor(c / 3)
+  return boxR1 === boxR && boxC1 === boxC
+}
+
+function isInGrid(key) {
+  let [r, c] = toArr(key)
+  return r >= 0 && r < NUM_ROWS && c >= 0 && c < NUM_COLS
+}
+
+function findKeysInBox(key, boxKey, set = new Set()) {
+  if (!isInBox(key, boxKey) || !isInGrid(key) || set.has(key)) {
+    return set
+  }
+  let [r, c] = set(key)
+  set.add(key)
+
+  return new Set([
+    ...findKeysInBox(toKey([r - 1, c]), boxKey, set),
+    ...findKeysInBox(toKey([r + 1, c]), boxKey, set),
+    ...findKeysInBox(toKey([r, c + 1]), boxKey, set),
+    ...findKeysInBox(toKey([r, c - 1]), boxKey, set),
+  ])
+
+  //find box key
+  //go left right up down recursively until key is not in box
+}
+
 function calcuateHighlightedSquares(key) {
   //return arr of highlighted row keys highluighted column keys and highlughted box keys
   let result = new Set()
@@ -14,14 +45,23 @@ function calcuateHighlightedSquares(key) {
     result.add(toKey([r, i]))
     //add col keys
     result.add(toKey([i, c]))
+    //find keys in box
+    //3-2
+    let boxR = Math.floor(r / 3)
+    let colR = Math.floor(c / 3)
+    let boxKey = toKey([boxR, colR])
+    for (let boxKeys of findKeysInBox(key, boxKey)) {
+      result.add(boxKeys)
+    }
+    //box 2-0 -> find keys
   }
+  result.delete(key)
   return result
 }
 
 export default function App() {
   let [gridValues, setGridValues] = useState(new Map([["0-0", 5]]))
   let [selectedSquare, setSelectedSquare] = useState("0-0")
-  console.log(gridValues)
   let [highlightedSquares, setHighlightedSquares] = useState(new Set())
 
   return (

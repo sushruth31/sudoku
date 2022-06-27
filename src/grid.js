@@ -22,25 +22,27 @@ export default function Grid({
     <div {...props} className={borderClassName}>
       {Array.from(Array(numRows)).map((_, rowI) => {
         return (
-          <div className="flex" key={rowI}>
-            {Array.from(Array(numCols)).map((_, colI) => {
-              let cellKey = toKey([rowI, colI])
-              return (
-                <div
-                  onClick={e => onCellClick(cellKey, e)}
-                  style={{ width: squareSize, height: squareSize }}
-                  className={
-                    typeof squareClassName === "function"
-                      ? squareClassName(cellKey)
-                      : squareClassName
-                  }
-                  key={colI}
-                >
-                  <RenderCell cellKey={cellKey} c={colI} r={rowI} />
-                </div>
-              )
-            })}
-          </div>
+          <>
+            <div className="flex" key={rowI}>
+              {Array.from(Array(numCols)).map((_, colI) => {
+                let cellKey = toKey([rowI, colI])
+                return (
+                  <div
+                    onClick={e => onCellClick(cellKey, e)}
+                    style={{ width: squareSize, height: squareSize }}
+                    className={
+                      typeof squareClassName === "function"
+                        ? squareClassName(cellKey)
+                        : squareClassName
+                    }
+                    key={colI}
+                  >
+                    <RenderCell cellKey={cellKey} c={colI} r={rowI} />
+                  </div>
+                )
+              })}
+            </div>
+          </>
         )
       })}
     </div>
