@@ -36,7 +36,7 @@ export default function Grid({
                   }
                   key={colI}
                 >
-                  <RenderCell cellKey={cellKey} colI={colI} rowI={rowI} />
+                  <RenderCell cellKey={cellKey} c={colI} r={rowI} />
                 </div>
               )
             })}
