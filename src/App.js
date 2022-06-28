@@ -21,7 +21,7 @@ function findKeysInBox(key, boxKey, set = new Set()) {
   if (!isInBox(key, boxKey) || !isInGrid(key) || set.has(key)) {
     return set
   }
-  let [r, c] = set(key)
+  let [r, c] = toArr(key)
   set.add(key)
 
   return new Set([
@@ -62,7 +62,7 @@ function calcuateHighlightedSquares(key) {
 export default function App() {
   let [gridValues, setGridValues] = useState(new Map([["0-0", 5]]))
   let [selectedSquare, setSelectedSquare] = useState("0-0")
-  let [highlightedSquares, setHighlightedSquares] = useState(new Set())
+  let [highlightedSquares, setHighlightedSquares] = useState(new Map()) //key -> color
 
   return (
     <div className="flex items-center p-4 flex-col justify-center">
@@ -70,8 +70,19 @@ export default function App() {
       <Grid
         squareSize={80}
         onCellClick={(key, e) => {
+          let map = new Map()
           setSelectedSquare(key)
-          setHighlightedSquares(calcuateHighlightedSquares(key))
+          for (let k of calcuateHighlightedSquares(key)) {
+            map.set(k, "#dee8f1")
+          }
+          //deterimine which keys of same value to highlight
+          gridValues.forEach((v, k) => {
+            if (v === gridValues.get(key)) {
+              map.set(k, "#bb81e7")
+            }
+          })
+
+          setHighlightedSquares(map)
         }}
         numCols={NUM_COLS}
         renderCell={({ cellKey }) => {
@@ -81,9 +92,7 @@ export default function App() {
                 backgroundColor:
                   selectedSquare === cellKey
                     ? "#b3d9fa"
-                    : highlightedSquares.has(cellKey)
-                    ? "#dee8f1"
-                    : "transparent",
+                    : highlightedSquares.get(cellKey),
               }}
               className="text-5xl w-full h-full flex items-center justify-center"
             >
