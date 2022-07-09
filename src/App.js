@@ -5,10 +5,8 @@ const NUM_COLS = 9
 const NUM_ROWS = 9
 
 function isInBox(key, boxKey) {
-  let [r, c] = toArr(key)
   let [boxR1, boxC1] = toArr(boxKey)
-  let boxR = Math.floor(r / 3)
-  let boxC = Math.floor(c / 3)
+  let [boxR, boxC] = toArr(createBoxKey(key))
   return boxR1 === boxR && boxC1 === boxC
 }
 
@@ -39,6 +37,9 @@ function calcuateHighlightedSquares(key) {
   //return arr of highlighted row keys highluighted column keys and highlughted box keys
   let result = new Set()
   let [r, c] = toArr(key)
+  let boxR = Math.floor(r / 3)
+  let colR = Math.floor(c / 3)
+  let boxKey = toKey([boxR, colR])
   //1-5 -> 1-0, 1-1, 1-2...
   for (let i = 0; i < NUM_COLS; ++i) {
     //add row keys
@@ -47,20 +48,77 @@ function calcuateHighlightedSquares(key) {
     result.add(toKey([i, c]))
     //find keys in box
     //3-2
-    let boxR = Math.floor(r / 3)
-    let colR = Math.floor(c / 3)
-    let boxKey = toKey([boxR, colR])
-    for (let boxKeys of findKeysInBox(key, boxKey)) {
-      result.add(boxKeys)
-    }
     //box 2-0 -> find keys
+  }
+  for (let boxKeys of findKeysInBox(key, boxKey)) {
+    result.add(boxKeys)
   }
   result.delete(key)
   return result
 }
 
+function coinToss() {
+  return Math.random() >= 0.5
+}
+
+function createBoxKey(key) {
+  let [r, c] = toArr(key)
+  let boxR = Math.floor(r / 3)
+  let boxC = Math.floor(c / 3)
+  return toKey([boxR, boxC])
+}
+
+function isValidPlacement(grid, key, attemptedVal) {
+  //check if attempted val is in same row.
+  let [row, col] = toArr(key)
+  if (
+    [...grid].some(([k, v]) => {
+      let [r] = toArr(k)
+      if (r === row) {
+        return v === attemptedVal
+      }
+    })
+  ) {
+    return false
+  }
+
+  //column check
+  if (
+    [...grid].some(([k, v]) => {
+      let [_, c] = toArr(k)
+      if (c === col) {
+        return v === attemptedVal
+      }
+    })
+  ) {
+    return false
+  }
+
+  //same box check
+  for (let boxKey of findKeysInBox(key, createBoxKey(key))) {
+    if (grid.get(boxKey) === attemptedVal) return false
+  }
+
+  return true
+}
+
+function initGrid() {
+  //return map '0-0' -> 5 (val)
+  let grid = new Map()
+  for (let i = 0; i < NUM_ROWS; i++) {
+    for (let j = 0; j < NUM_COLS; j++) {
+      let key = toKey([i, j])
+      let attemptedVal = Math.floor(Math.random() * 10)
+      if (coinToss() && isValidPlacement(grid, key, attemptedVal)) {
+        grid.set(key, attemptedVal)
+      }
+    }
+  }
+  return grid
+}
+
 export default function App() {
-  let [gridValues, setGridValues] = useState(new Map([["0-0", 5]]))
+  let [gridValues, setGridValues] = useState(initGrid)
   let [selectedSquare, setSelectedSquare] = useState("0-0")
   let [highlightedSquares, setHighlightedSquares] = useState(new Map()) //key -> color
 
