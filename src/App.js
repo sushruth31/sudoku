@@ -1,8 +1,9 @@
-import { useState } from "react"
+import { useMemo, useState } from "react"
 import Grid, { toArr, toKey } from "./grid"
+import { getPuzzle } from "./puzzles"
 
-const NUM_COLS = 9
-const NUM_ROWS = 9
+export const NUM_COLS = 9
+export const NUM_ROWS = 9
 
 function isInBox(key, boxKey) {
   let [boxR1, boxC1] = toArr(boxKey)
@@ -102,23 +103,83 @@ function isValidPlacement(grid, key, attemptedVal) {
   return true
 }
 
-function initGrid() {
-  //return map '0-0' -> 5 (val)
-  let grid = new Map()
-  for (let i = 0; i < NUM_ROWS; i++) {
-    for (let j = 0; j < NUM_COLS; j++) {
+export function randomIntFromInterval(min, max) {
+  // min and max included
+  return Math.floor(Math.random() * (max - min + 1) + min)
+}
+
+export function randomElFromArr(arr) {
+  return arr[randomIntFromInterval(0, arr.length - 1)]
+}
+
+let grid = [
+  [5, 3, 0, 0, 7, 0, 0, 0, 0],
+  [6, 0, 0, 1, 9, 5, 0, 0, 0],
+  [0, 9, 8, 0, 0, 0, 0, 6, 0],
+  [8, 0, 0, 0, 6, 0, 0, 0, 3],
+  [4, 0, 0, 8, 0, 3, 0, 0, 1],
+  [7, 0, 0, 0, 2, 0, 0, 0, 6],
+  [0, 6, 0, 0, 0, 0, 2, 8, 0],
+  [0, 0, 0, 4, 1, 9, 0, 0, 5],
+  [0, 0, 0, 0, 8, 0, 0, 7, 9],
+]
+
+function arrToMap(a) {
+  let map = new Map()
+  for (let i = 0; i < a.length; i++) {
+    let row = a[i]
+    for (let j = 0; j < row.length; j++) {
+      let val = row[j]
       let key = toKey([i, j])
-      let attemptedVal = Math.floor(Math.random() * 10)
-      if (coinToss() && isValidPlacement(grid, key, attemptedVal)) {
-        grid.set(key, attemptedVal)
+      if (val) {
+        map.set(key, val)
       }
     }
   }
-  return grid
+  return map
+}
+
+function solve() {
+  for (let i = 0; i < NUM_ROWS; i++) {
+    for (let j = 0; j < NUM_COLS; j++) {
+      let key = toKey([i, j])
+      if (grid[i][j] === 0) {
+        for (let n = 1; n < 10; n++) {
+          if (isValidPlacement(grid, key, n)) {
+            console.log(grid)
+            grid[i][j] = n
+            solve()
+            grid[i][j] = 0
+          }
+        }
+        return
+      }
+    }
+  }
+  console.log(grid)
+  return
+}
+
+function shuffle(arr) {
+  for (let i = 0; i < arr.length; i++) {
+    let randI = randomIntFromInterval(0, arr.length - 1)
+    ;[arr[i], arr[randI]] = [arr[randI], arr[i]]
+  }
+
+  return arr
+}
+
+window.shuffle = shuffle
+
+function generateGrid(level) {
+  //get input grid and randomize it.
+  let grid = getPuzzle(level)
+
+  return new Map()
 }
 
 export default function App() {
-  let [gridValues, setGridValues] = useState(initGrid)
+  let [gridValues, setGridValues] = useState(generateGrid)
   let [selectedSquare, setSelectedSquare] = useState("0-0")
   let [highlightedSquares, setHighlightedSquares] = useState(new Map()) //key -> color
 
@@ -154,7 +215,7 @@ export default function App() {
               }}
               className="text-5xl w-full h-full flex items-center justify-center"
             >
-              {gridValues.get(cellKey)}
+              {gridValues?.get(cellKey)}
             </div>
           )
         }}
