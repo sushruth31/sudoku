@@ -97,10 +97,10 @@ export function isValidPlacement(grid, key, attemptedVal) {
     return false
   }
 
-  //same box check
-  // for (let boxKey of findKeysInBox(key, createBoxKey(key))) {
-  //   if (grid.get(boxKey) === attemptedVal) return false
-  // }
+  //  same box check
+  for (let boxKey of findKeysInBox(key, createBoxKey(key))) {
+    if (grid.get(boxKey) === attemptedVal) return false
+  }
 
   return true
 }
@@ -116,14 +116,12 @@ export function randomElFromArr(arr) {
 
 export function arrToMap(a) {
   let map = new Map()
-  for (let i = 0; i < a.length; i++) {
+  for (let i = 0; i < NUM_ROWS; i++) {
     let row = a[i]
-    for (let j = 0; j < row.length; j++) {
+    for (let j = 0; j < NUM_COLS; j++) {
       let val = row[j]
       let key = toKey([i, j])
-      if (val != null) {
-        map.set(key, val)
-      }
+      map.set(key, val)
     }
   }
   return map
@@ -146,28 +144,26 @@ function generateGrid(level) {
   //rotate
   //remap numbers
   //shuffle
-
   function solve() {
     for (let i = 0; i < NUM_ROWS; i++) {
       for (let j = 0; j < NUM_COLS; j++) {
         let key = toKey([i, j])
-        if (!grid.get(key)) {
-          for (let n = 1; n < 10; n++) {
-            if (isValidPlacement(grid, key, n)) {
-              console.log(grid)
-              grid.set(key, n)
-              solve()
-              //grid.set(key, 0)
-            }
+        if (grid.get(key) > 0) continue
+        for (let n = 1; n < 10; n++) {
+          if (isValidPlacement(grid, key, n)) {
+            console.log(grid)
+            grid.set(key, n)
+            solve()
+            grid.set(key, 0)
           }
-          return
         }
+        return
       }
     }
   }
 
   solve()
-
+  console.log(grid)
   //remove values at random and do a check if valid before returning
 
   return grid
