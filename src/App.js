@@ -69,36 +69,38 @@ function createBoxKey(key) {
   return toKey([boxR, boxC])
 }
 
-function isValidPlacement(grid, key, attemptedVal) {
+export function isValidPlacement(grid, key, attemptedVal) {
+  //repalce 0s with nulls
   //check if attempted val is in same row.
   let [row, col] = toArr(key)
+  grid.delete(key)
+  //check row
   if (
-    [...grid].some(([k, v]) => {
-      let [r] = toArr(k)
-      if (r === row) {
-        return v === attemptedVal
-      }
-    })
+    [...grid]
+      .filter(([k, v]) => {
+        let [r] = toArr(k)
+        return r === row
+      })
+      .some(([k, v]) => v === attemptedVal)
   ) {
     return false
   }
 
-  //column check
   if (
-    [...grid].some(([k, v]) => {
-      let [_, c] = toArr(k)
-      if (c === col) {
-        return v === attemptedVal
-      }
-    })
+    [...grid]
+      .filter(([k, v]) => {
+        let [_, c] = toArr(k)
+        return c === col
+      })
+      .some(([k, v]) => v === attemptedVal)
   ) {
     return false
   }
 
   //same box check
-  for (let boxKey of findKeysInBox(key, createBoxKey(key))) {
-    if (grid.get(boxKey) === attemptedVal) return false
-  }
+  // for (let boxKey of findKeysInBox(key, createBoxKey(key))) {
+  //   if (grid.get(boxKey) === attemptedVal) return false
+  // }
 
   return true
 }
@@ -112,52 +114,19 @@ export function randomElFromArr(arr) {
   return arr[randomIntFromInterval(0, arr.length - 1)]
 }
 
-let grid = [
-  [5, 3, 0, 0, 7, 0, 0, 0, 0],
-  [6, 0, 0, 1, 9, 5, 0, 0, 0],
-  [0, 9, 8, 0, 0, 0, 0, 6, 0],
-  [8, 0, 0, 0, 6, 0, 0, 0, 3],
-  [4, 0, 0, 8, 0, 3, 0, 0, 1],
-  [7, 0, 0, 0, 2, 0, 0, 0, 6],
-  [0, 6, 0, 0, 0, 0, 2, 8, 0],
-  [0, 0, 0, 4, 1, 9, 0, 0, 5],
-  [0, 0, 0, 0, 8, 0, 0, 7, 9],
-]
-
-function arrToMap(a) {
+export function arrToMap(a) {
   let map = new Map()
   for (let i = 0; i < a.length; i++) {
     let row = a[i]
     for (let j = 0; j < row.length; j++) {
       let val = row[j]
       let key = toKey([i, j])
-      if (val) {
+      if (val != null) {
         map.set(key, val)
       }
     }
   }
   return map
-}
-
-function solve() {
-  for (let i = 0; i < NUM_ROWS; i++) {
-    for (let j = 0; j < NUM_COLS; j++) {
-      let key = toKey([i, j])
-      if (grid[i][j] === 0) {
-        for (let n = 1; n < 10; n++) {
-          if (isValidPlacement(grid, key, n)) {
-            console.log(grid)
-            grid[i][j] = n
-            solve()
-            grid[i][j] = 0
-          }
-        }
-        return
-      }
-    }
-  }
-  console.log(grid)
-  return
 }
 
 function shuffle(arr) {
@@ -169,17 +138,44 @@ function shuffle(arr) {
   return arr
 }
 
-window.shuffle = shuffle
+function rotateArr(arr) {}
 
 function generateGrid(level) {
   //get input grid and randomize it.
-  let grid = getPuzzle(level)
+  let grid = arrToMap(getPuzzle(level))
+  //rotate
+  //remap numbers
+  //shuffle
 
-  return new Map()
+  function solve() {
+    for (let i = 0; i < NUM_ROWS; i++) {
+      for (let j = 0; j < NUM_COLS; j++) {
+        let key = toKey([i, j])
+        if (!grid.get(key)) {
+          for (let n = 1; n < 10; n++) {
+            if (isValidPlacement(grid, key, n)) {
+              console.log(grid)
+              grid.set(key, n)
+              solve()
+              //grid.set(key, 0)
+            }
+          }
+          return
+        }
+      }
+    }
+  }
+
+  solve()
+
+  //remove values at random and do a check if valid before returning
+
+  return grid
 }
 
 export default function App() {
-  let [gridValues, setGridValues] = useState(generateGrid)
+  let [level, setLevel] = useState("easy")
+  let [gridValues, setGridValues] = useState(() => generateGrid(level))
   let [selectedSquare, setSelectedSquare] = useState("0-0")
   let [highlightedSquares, setHighlightedSquares] = useState(new Map()) //key -> color
 
@@ -196,7 +192,7 @@ export default function App() {
           }
           //deterimine which keys of same value to highlight
           gridValues.forEach((v, k) => {
-            if (v === gridValues.get(key)) {
+            if (v && v === gridValues.get(key)) {
               map.set(k, "#bb81e7")
             }
           })
@@ -205,6 +201,7 @@ export default function App() {
         }}
         numCols={NUM_COLS}
         renderCell={({ cellKey }) => {
+          let val = gridValues.get(cellKey)
           return (
             <div
               style={{
@@ -215,7 +212,7 @@ export default function App() {
               }}
               className="text-5xl w-full h-full flex items-center justify-center"
             >
-              {gridValues?.get(cellKey)}
+              {!!val && val}
             </div>
           )
         }}
