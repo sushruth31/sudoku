@@ -15,12 +15,26 @@ function isInGrid(key) {
   let [r, c] = toArr(key)
   return r >= 0 && r < NUM_ROWS && c >= 0 && c < NUM_COLS
 }
+window.findKeysInBox = findKeysInBox
+
+function isKeyValid(key) {
+  if (key.startsWith("-")) return false
+  if (key.includes("--")) return false
+  return true
+}
 
 function findKeysInBox(key, boxKey, set = new Set()) {
-  if (!isInBox(key, boxKey) || !isInGrid(key) || set.has(key)) {
+  let [r, c] = toArr(key)
+
+  if (
+    !isInBox(key, boxKey) ||
+    !isInGrid(key) ||
+    set.has(key) ||
+    !isKeyValid(key)
+  ) {
     return set
   }
-  let [r, c] = toArr(key)
+
   set.add(key)
 
   return new Set([
@@ -74,32 +88,20 @@ export function isValidPlacement(grid, key, attemptedVal) {
   //check if attempted val is in same row.
   let [row, col] = toArr(key)
   grid.delete(key)
-  //check row
-  if (
-    [...grid]
-      .filter(([k, v]) => {
-        let [r] = toArr(k)
-        return r === row
-      })
-      .some(([k, v]) => v === attemptedVal)
-  ) {
-    return false
+  //check row and col
+  for (let [key, val] of grid.entries()) {
+    let [r, c] = toArr(key)
+    if ((r === row || c === col) && val === attemptedVal) {
+      return false
+    }
   }
-
-  if (
-    [...grid]
-      .filter(([k, v]) => {
-        let [_, c] = toArr(k)
-        return c === col
-      })
-      .some(([k, v]) => v === attemptedVal)
-  ) {
-    return false
-  }
-
   //  same box check
-  for (let boxKey of findKeysInBox(key, createBoxKey(key))) {
-    if (grid.get(boxKey) === attemptedVal) return false
+  if (
+    [...findKeysInBox(key, createBoxKey(key))]
+      .filter(bk => bk !== key)
+      .some(boxKey => grid.get(boxKey) === attemptedVal)
+  ) {
+    return false
   }
 
   return true
@@ -136,37 +138,57 @@ function shuffle(arr) {
   return arr
 }
 
-function rotateArr(arr) {}
+function rotateArrLeft(arr) {
+  let target = Array.from(Array(NUM_ROWS), () => Array.from(Array(NUM_COLS)))
+  //0 1 -> 7, 0
+  //i, j -> 9 - 1 - j, i
+  //0 0 -> 8, 0
+
+  for (let i = 0; i < NUM_ROWS; i++) {
+    for (let j = 0; j < NUM_COLS; j++) {
+      target[NUM_COLS - 1 - j][i] = arr[i][j]
+    }
+  }
+  return target
+}
 
 function generateGrid(level) {
   //get input grid and randomize it.
-  let grid = arrToMap(getPuzzle(level))
+  let grid = getPuzzle(level)
   //rotate
   //remap numbers
   //shuffle
+  grid = rotateArrLeft(grid)
+
   function solve() {
     for (let i = 0; i < NUM_ROWS; i++) {
       for (let j = 0; j < NUM_COLS; j++) {
         let key = toKey([i, j])
-        if (grid.get(key) > 0) continue
-        for (let n = 1; n < 10; n++) {
-          if (isValidPlacement(grid, key, n)) {
-            console.log(grid)
-            grid.set(key, n)
-            solve()
-            grid.set(key, 0)
+        if (grid[i][j] === 0) {
+          for (let n = 1; n < 10; n++) {
+            if (isValidPlacement(arrToMap(grid), key, n)) {
+              grid[i][j] = n
+              solve()
+            }
           }
+          return
         }
-        return
       }
     }
   }
 
-  solve()
-  console.log(grid)
   //remove values at random and do a check if valid before returning
+  solve()
+  return remove0sFromMap(arrToMap(grid))
+}
 
-  return grid
+function remove0sFromMap(map) {
+  map.forEach((v, k) => {
+    if (k && !v) {
+      map.delete(k)
+    }
+  })
+  return map
 }
 
 export default function App() {
@@ -188,7 +210,7 @@ export default function App() {
           }
           //deterimine which keys of same value to highlight
           gridValues.forEach((v, k) => {
-            if (v && v === gridValues.get(key)) {
+            if (v === gridValues.get(key)) {
               map.set(k, "#bb81e7")
             }
           })
@@ -208,7 +230,7 @@ export default function App() {
               }}
               className="text-5xl w-full h-full flex items-center justify-center"
             >
-              {!!val && val}
+              {val}
             </div>
           )
         }}
