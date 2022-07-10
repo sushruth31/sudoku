@@ -152,13 +152,19 @@ function rotateArrLeft(arr) {
   return target
 }
 
+function pipe(...fns) {
+  return initVal => {
+    return fns.reduce((acc, fn) => fn(acc), initVal)
+  }
+}
+
 function generateGrid(level) {
   //get input grid and randomize it.
   let grid = getPuzzle(level)
   //rotate
   //remap numbers
   //shuffle
-  grid = rotateArrLeft(grid)
+  grid = pipe(rotateArrLeft)(grid)
 
   function solve() {
     for (let i = 0; i < NUM_ROWS; i++) {
