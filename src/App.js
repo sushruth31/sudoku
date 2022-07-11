@@ -83,27 +83,34 @@ function createBoxKey(key) {
   return toKey([boxR, boxC])
 }
 
-export function isValidPlacement(grid, key, attemptedVal) {
+export function isValidPlacement(grid, row, col, attemptedVal) {
   //repalce 0s with nulls
   //check if attempted val is in same row.
-  let [row, col] = toArr(key)
-  grid.delete(key)
   //check row and col
-  for (let [key, val] of grid.entries()) {
-    let [r, c] = toArr(key)
-    if ((r === row || c === col) && val === attemptedVal) {
+  let key = toKey([row, col])
+
+  for (let i = 0; i < NUM_COLS; i++) {
+    if (grid[row][i] === attemptedVal) {
       return false
     }
   }
-  //  same box check
-  if (
-    [...findKeysInBox(key, createBoxKey(key))]
-      .filter(bk => bk !== key)
-      .some(boxKey => grid.get(boxKey) === attemptedVal)
-  ) {
-    return false
+  for (let i = 0; i < NUM_ROWS; i++) {
+    if (grid[i][col] === attemptedVal) {
+      return false
+    }
   }
+  let [boxR, boxC] = toArr(createBoxKey(key))
+  //get top left corner of box
+  boxR *= 3
+  boxC *= 3
 
+  for (let i = boxR; i < boxR + 3; i++) {
+    for (let j = boxC; j < boxC + 3; j++) {
+      if (grid[boxR][boxC] === attemptedVal) {
+        return false
+      }
+    }
+  }
   return true
 }
 
@@ -158,6 +165,48 @@ function pipe(...fns) {
   }
 }
 
+function getNextSquare(grid) {
+  for (let i = 0; i < NUM_ROWS; i++) {
+    for (let j = 0; j < NUM_COLS; j++) {
+      if (grid[i][j] === 0) {
+        return [i, j]
+      }
+    }
+  }
+  return [-1, -1]
+}
+
+function solve(grid) {
+  let [r, c] = getNextSquare(grid)
+  if (r === -1) {
+    return grid
+  }
+
+  for (let n = 1; n <= 9; n++) {
+    if (isValidPlacement(grid, r, c, n)) {
+      grid[r][c] = n
+      solve(grid)
+    }
+  }
+
+  if (getNextSquare(grid)[0] !== -1) {
+    grid[r][c] = 0
+  }
+
+  return grid
+}
+
+function remapGrid(grid) {
+  //map {2 -> 4 }
+  let map = {}
+  for (let i = 1; i < NUM_COLS; i++) {
+    //find a number to remap i
+    let existingNums = Object.keys(map)
+
+    //map[i] = num
+  }
+}
+
 function generateGrid(level) {
   //get input grid and randomize it.
   let grid = getPuzzle(level)
@@ -166,26 +215,9 @@ function generateGrid(level) {
   //shuffle
   grid = pipe(rotateArrLeft)(grid)
 
-  function solve() {
-    for (let i = 0; i < NUM_ROWS; i++) {
-      for (let j = 0; j < NUM_COLS; j++) {
-        let key = toKey([i, j])
-        if (grid[i][j] === 0) {
-          for (let n = 1; n < 10; n++) {
-            if (isValidPlacement(arrToMap(grid), key, n)) {
-              grid[i][j] = n
-              solve()
-            }
-          }
-          return
-        }
-      }
-    }
-  }
+  let solvedGrid = solve(grid)
 
-  //remove values at random and do a check if valid before returning
-  solve()
-  return remove0sFromMap(arrToMap(grid))
+  return remove0sFromMap(arrToMap(solvedGrid))
 }
 
 function remove0sFromMap(map) {
