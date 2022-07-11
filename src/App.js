@@ -196,15 +196,32 @@ function solve(grid) {
   return grid
 }
 
+function getRandomNumber(...avoidNumbers) {
+  let safe = []
+  for (let i = 1; i <= NUM_COLS; i++) {
+    if (!avoidNumbers.includes(i)) {
+      safe.push(i)
+    }
+  }
+  return randomElFromArr(safe)
+}
+
 function remapGrid(grid) {
   //map {2 -> 4 }
   let map = {}
-  for (let i = 1; i < NUM_COLS; i++) {
-    //find a number to remap i
-    let existingNums = Object.keys(map)
 
-    //map[i] = num
+  for (let i = 1; i <= NUM_COLS; i++) {
+    //find a number to remap i
+    map[i] = getRandomNumber(i, ...Object.values(map).map(Number))
   }
+
+  for (let i = 0; i < NUM_ROWS; i++) {
+    for (let j = 0; j < NUM_COLS; j++) {
+      if (grid[i][j] === 0) continue
+      grid[i][j] = map[grid[i][j]]
+    }
+  }
+  return grid
 }
 
 function generateGrid(level) {
@@ -213,11 +230,17 @@ function generateGrid(level) {
   //rotate
   //remap numbers
   //shuffle
-  grid = pipe(rotateArrLeft)(grid)
+  grid = pipe(rotateArrLeft, remapGrid)(grid)
 
   let solvedGrid = solve(grid)
 
-  return remove0sFromMap(arrToMap(solvedGrid))
+  let att = solvedGrid
+
+  return isFilled(att) ? remove0sFromMap(arrToMap(att)) : generateGrid(level)
+}
+
+function isFilled(grid) {
+  return grid.every(r => r.every(c => c))
 }
 
 function remove0sFromMap(map) {
