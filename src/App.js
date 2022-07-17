@@ -133,7 +133,7 @@ export function arrToMap(a) {
       map.set(key, val)
     }
   }
-  return map
+  return remove0sFromMap(map)
 }
 
 function shuffle(arr) {
@@ -224,19 +224,41 @@ function remapGrid(grid) {
   return grid
 }
 
-function generateGrid(level) {
+function shuffleGridHorizontal(grid) {
+  return [
+    ...shuffle(grid.slice(0, 2)),
+    ...shuffle(grid.slice(3, 5)),
+    ...shuffle(grid.slice(6, 8)),
+  ]
+}
+
+function rotateGridRight(grid) {
+  //r7 -> c1
+  let target = Array.from(Array(NUM_ROWS), () => Array.from(Array(NUM_COLS)))
+  for (let r = 0; r < grid.length; r++) {
+    for (let c = 0; c < grid.length; c++) {
+      target[c][NUM_COLS - r - 1] = grid[r][c]
+    }
+  }
+
+  return target
+}
+
+function shuffleGridVertical(grid) {}
+
+function generatePuzzle(level) {
   //get input grid and randomize it.
-  let grid = getPuzzle(level)
+  let puzzle = getPuzzle(level)
   //rotate
   //remap numbers
   //shuffle
-  grid = pipe(rotateArrLeft, remapGrid)(grid)
+  puzzle = pipe(rotateArrLeft, remapGrid, shuffle)(puzzle)
 
-  let solvedGrid = solve(grid)
+  let solved = solve(puzzle)
 
-  let att = solvedGrid
-
-  return isFilled(att) ? remove0sFromMap(arrToMap(att)) : generateGrid(level)
+  return isFilled(solved)
+    ? arrToMap(rotateGridRight(solved))
+    : generatePuzzle(level)
 }
 
 function isFilled(grid) {
@@ -254,7 +276,7 @@ function remove0sFromMap(map) {
 
 export default function App() {
   let [level, setLevel] = useState("easy")
-  let [gridValues, setGridValues] = useState(() => generateGrid(level))
+  let [gridValues, setGridVaues] = useState(() => generatePuzzle(level))
   let [selectedSquare, setSelectedSquare] = useState("0-0")
   let [highlightedSquares, setHighlightedSquares] = useState(new Map()) //key -> color
 
