@@ -256,6 +256,7 @@ function createFnArray() {
     shuffleGridHorizontal,
     rotateGridRight,
     shuffleGridHorizontal,
+    shuffleGridVertical,
   ]
   let t = [],
     index = 0
