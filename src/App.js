@@ -226,9 +226,9 @@ function remapGrid(grid) {
 
 function shuffleGridHorizontal(grid) {
   return [
-    ...shuffle(grid.slice(0, 2)),
-    ...shuffle(grid.slice(3, 5)),
-    ...shuffle(grid.slice(6, 8)),
+    ...shuffle(grid.slice(0, 3)),
+    ...shuffle(grid.slice(3, 6)),
+    ...shuffle(grid.slice(6)),
   ]
 }
 
@@ -244,7 +244,30 @@ function rotateGridRight(grid) {
   return target
 }
 
-function shuffleGridVertical(grid) {}
+function shuffleGridVertical(grid) {
+  //rotate left
+  return pipe(rotateArrLeft, shuffleGridHorizontal, rotateGridRight)(grid)
+}
+
+function createFnArray() {
+  let fns = [
+    rotateArrLeft,
+    remapGrid,
+    shuffleGridHorizontal,
+    rotateGridRight,
+    shuffleGridHorizontal,
+  ]
+  let t = [],
+    index = 0
+  for (let i = 0; i < 50; i++, ++index) {
+    if (index >= fns.length - 1) {
+      index = 0
+    }
+    t.push(fns[index])
+  }
+
+  return shuffle(t)
+}
 
 function generatePuzzle(level) {
   //get input grid and randomize it.
@@ -252,13 +275,11 @@ function generatePuzzle(level) {
   //rotate
   //remap numbers
   //shuffle
-  puzzle = pipe(rotateArrLeft, remapGrid, shuffle)(puzzle)
+  puzzle = pipe(...createFnArray())(puzzle)
 
   let solved = solve(puzzle)
 
-  return isFilled(solved)
-    ? arrToMap(rotateGridRight(solved))
-    : generatePuzzle(level)
+  return isFilled(solved) ? arrToMap(solved) : generatePuzzle(level)
 }
 
 function isFilled(grid) {
