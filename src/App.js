@@ -269,17 +269,78 @@ function createFnArray() {
   return shuffle(t)
 }
 
+function findCountofElInGrid(grid, val) {
+  return grid
+    .map(row => {
+      return row.reduce((acc, cur) => {
+        if (cur === val) {
+          return ++acc
+        }
+        return acc
+      }, 0)
+    })
+    .reduce((a, b) => a + b)
+}
+
 function generatePuzzle(level) {
   //get input grid and randomize it.
   let puzzle = getPuzzle(level)
+  let numZeros = findCountofElInGrid(puzzle, 0)
   //rotate
   //remap numbers
   //shuffle
   puzzle = pipe(...createFnArray())(puzzle)
-
   let solved = solve(puzzle)
+  solved = isFilled(solved) ? arrToMap(solved) : generatePuzzle(level)
+  puzzle = recreatePuzzle(mapToGrid(solved), numZeros)
+  //recreate the puzzle with the same number of zeros
+  if (solved instanceof Map && puzzle instanceof Map) {
+    return { solved, puzzle }
+  }
+  return generatePuzzle(level)
+}
 
-  return isFilled(solved) ? arrToMap(solved) : generatePuzzle(level)
+function mapToGrid(map) {
+  let t = Array.from(Array(NUM_COLS), () => Array.from(Array(NUM_COLS)))
+  for (let i = 0; i < NUM_COLS; i++) {
+    for (let j = 0; j < NUM_ROWS; j++) {
+      let key = toKey([i, j])
+      t[i][j] = map.get(key)
+    }
+  }
+  return t
+}
+
+function isKeyInGrid(grid, key) {
+  let [r, c] = toArr(key)
+  return grid[r][c] !== 0
+}
+
+function recreatePuzzle(grid, numZeros) {
+  let gridOrig = [...grid]
+
+  function getRandomIndexFromGrid() {
+    let int1 = randomIntFromInterval(0, NUM_ROWS - 1),
+      int2 = randomIntFromInterval(0, NUM_COLS - 1)
+    let attempt = toKey([int1, int2])
+    if (isKeyInGrid(grid, attempt)) {
+      //remove from grid
+      grid[int1][int2] = 0
+      return attempt
+    }
+    return getRandomIndexFromGrid()
+  }
+
+  let randomKeysForRemoval = Array.from(Array(numZeros), () =>
+    getRandomIndexFromGrid()
+  )
+
+  for (let key of randomKeysForRemoval) {
+    let [r, c] = toArr(key)
+    gridOrig[r][c] = 0
+  }
+
+  return arrToMap(gridOrig)
 }
 
 function isFilled(grid) {
@@ -295,12 +356,27 @@ function remove0sFromMap(map) {
   return map
 }
 
+function gen(level) {
+  //bruh
+  let attempt
+  while (!attempt) {
+    try {
+      attempt = generatePuzzle(level)
+    } catch {
+      continue
+    }
+  }
+  return attempt
+}
+
 export default function App() {
   let [level, setLevel] = useState("easy")
-  let [gridValues, setGridVaues] = useState(() => generatePuzzle(level))
+  let [{ solved: gridValues, puzzle }, setGridValues] = useState(() =>
+    gen(level)
+  )
   let [selectedSquare, setSelectedSquare] = useState("0-0")
   let [highlightedSquares, setHighlightedSquares] = useState(new Map()) //key -> color
-
+  console.log(puzzle)
   return (
     <div className="flex items-center p-4 flex-col justify-center">
       <div className="font-bold text-3xl mb-4">Let's Play Sodoku</div>

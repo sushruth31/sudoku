@@ -1,10 +1,4 @@
-import {
-  arrToMap,
-  isValidPlacement,
-  randomElFromArr,
-  randomIntFromInterval,
-} from "./App"
-import Grid, { toKey } from "./grid"
+import { randomElFromArr } from "./App"
 
 const puzzles = {
   easy: [
