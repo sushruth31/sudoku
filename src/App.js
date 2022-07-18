@@ -5,71 +5,36 @@ import { getPuzzle } from "./puzzles"
 export const NUM_COLS = 9
 export const NUM_ROWS = 9
 
-function isInBox(key, boxKey) {
-  let [boxR1, boxC1] = toArr(boxKey)
-  let [boxR, boxC] = toArr(createBoxKey(key))
-  return boxR1 === boxR && boxC1 === boxC
-}
-
-function isInGrid(key) {
-  let [r, c] = toArr(key)
-  return r >= 0 && r < NUM_ROWS && c >= 0 && c < NUM_COLS
-}
-window.findKeysInBox = findKeysInBox
-
-function isKeyValid(key) {
-  if (key.startsWith("-")) return false
-  if (key.includes("--")) return false
-  return true
-}
-
-function findKeysInBox(key, boxKey, set = new Set()) {
-  let [r, c] = toArr(key)
-
-  if (
-    !isInBox(key, boxKey) ||
-    !isInGrid(key) ||
-    set.has(key) ||
-    !isKeyValid(key)
-  ) {
-    return set
-  }
-
-  set.add(key)
-
-  return new Set([
-    ...findKeysInBox(toKey([r - 1, c]), boxKey, set),
-    ...findKeysInBox(toKey([r + 1, c]), boxKey, set),
-    ...findKeysInBox(toKey([r, c + 1]), boxKey, set),
-    ...findKeysInBox(toKey([r, c - 1]), boxKey, set),
-  ])
-
-  //find box key
-  //go left right up down recursively until key is not in box
-}
-
 function calcuateHighlightedSquares(key) {
   //return arr of highlighted row keys highluighted column keys and highlughted box keys
   let result = new Set()
   let [r, c] = toArr(key)
-  let boxR = Math.floor(r / 3)
-  let colR = Math.floor(c / 3)
-  let boxKey = toKey([boxR, colR])
   //1-5 -> 1-0, 1-1, 1-2...
   for (let i = 0; i < NUM_COLS; ++i) {
     //add row keys
     result.add(toKey([r, i]))
     //add col keys
     result.add(toKey([i, c]))
-    //find keys in box
-    //3-2
-    //box 2-0 -> find keys
   }
-  for (let boxKeys of findKeysInBox(key, boxKey)) {
-    result.add(boxKeys)
-  }
+  //find keys in box
+  getBoxKeys(key).forEach((k) => result.add(k))
   result.delete(key)
   return result
+}
+
+function getBoxKeys(key) {
+  let set = new Set()
+  let [boxR, boxC] = toArr(createBoxKey(key))
+  boxR *= 3
+  boxC *= 3
+
+  for (let r = boxR; r < boxR + 3; r++) {
+    for (let c = boxC; c < boxC + 3; c++) {
+      let boxKey = toKey([r, c])
+      set.add(boxKey)
+    }
+  }
+  return set
 }
 
 function coinToss() {
@@ -99,18 +64,15 @@ export function isValidPlacement(grid, row, col, attemptedVal) {
       return false
     }
   }
-  let [boxR, boxC] = toArr(createBoxKey(key))
   //get top left corner of box
-  boxR *= 3
-  boxC *= 3
 
-  for (let i = boxR; i < boxR + 3; i++) {
-    for (let j = boxC; j < boxC + 3; j++) {
-      if (grid[boxR][boxC] === attemptedVal) {
-        return false
-      }
+  for (let k of getBoxKeys(key)) {
+    let [boxR, boxC] = toArr(k)
+    if (grid[boxR][boxC] === attemptedVal) {
+      return false
     }
   }
+
   return true
 }
 
@@ -160,7 +122,7 @@ function rotateArrLeft(arr) {
 }
 
 function pipe(...fns) {
-  return initVal => {
+  return (initVal) => {
     return fns.reduce((acc, fn) => fn(acc), initVal)
   }
 }
@@ -272,7 +234,7 @@ function createFnArray() {
 
 function findCountofElInGrid(grid, val) {
   return grid
-    .map(row => {
+    .map((row) => {
       return row.reduce((acc, cur) => {
         if (cur === val) {
           return ++acc
@@ -345,7 +307,7 @@ function recreatePuzzle(grid, numZeros) {
 }
 
 function isFilled(grid) {
-  return grid.every(r => r.every(c => c))
+  return grid.every((r) => r.every((c) => c))
 }
 
 function remove0sFromMap(map) {
@@ -372,12 +334,10 @@ function gen(level) {
 
 export default function App() {
   let [level, setLevel] = useState("easy")
-  let [{ solved: gridValues, puzzle }, setGridValues] = useState(() =>
-    gen(level)
-  )
+  let { puzzle, solved } = useMemo(() => gen(level))
+  let [gridValues, setGridValues] = useState(puzzle)
   let [selectedSquare, setSelectedSquare] = useState("0-0")
   let [highlightedSquares, setHighlightedSquares] = useState(new Map()) //key -> color
-  console.log(puzzle)
   return (
     <div className="flex items-center p-4 flex-col justify-center">
       <div className="font-bold text-3xl mb-4">Let's Play Sodoku</div>
@@ -392,7 +352,7 @@ export default function App() {
           //deterimine which keys of same value to highlight
           gridValues.forEach((v, k) => {
             if (v === gridValues.get(key)) {
-              map.set(k, "#bb81e7")
+              map.set(k, "#bbd1e7")
             }
           })
 
@@ -417,7 +377,7 @@ export default function App() {
         }}
         numRows={NUM_ROWS}
         borderClassName="border-2 border-black"
-        squareClassName={key => {
+        squareClassName={(key) => {
           let [r, c] = toArr(key)
           return c % 3 === 0 && r % 3 === 0
             ? `flex items-center justify-center border-t-black border-2 border-[#dadee6] border-l-black`
