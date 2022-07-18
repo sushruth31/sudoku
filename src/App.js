@@ -18,7 +18,7 @@ function calcuateHighlightedSquares(key) {
     result.add(toKey([i, c]))
   }
   //find keys in box
-  getBoxKeys(key).forEach((k) => result.add(k))
+  getBoxKeys(key).forEach(k => result.add(k))
   result.delete(key)
   return result
 }
@@ -123,7 +123,7 @@ function rotateArrLeft(arr) {
 }
 
 function pipe(...fns) {
-  return (initVal) => {
+  return initVal => {
     return fns.reduce((acc, fn) => fn(acc), initVal)
   }
 }
@@ -235,7 +235,7 @@ function createFnArray() {
 
 function findCountofElInGrid(grid, val) {
   return grid
-    .map((row) => {
+    .map(row => {
       return row.reduce((acc, cur) => {
         if (cur === val) {
           return ++acc
@@ -308,7 +308,7 @@ function recreatePuzzle(grid, numZeros) {
 }
 
 function isFilled(grid) {
-  return grid.every((r) => r.every((c) => c))
+  return grid.every(r => r.every(c => c))
 }
 
 function remove0sFromMap(map) {
@@ -345,7 +345,7 @@ export default function App() {
       <div className="font-bold text-3xl mb-4">Let's Play Sodoku</div>
       <div className="flex items-center">
         <button
-          onClick={() => setGridValues((p) => (p === puzzle ? solved : puzzle))}
+          onClick={() => setGridValues(p => (p === puzzle ? solved : puzzle))}
           className="p-2 rounded bg-blue-400 text-white m-2"
         >
           Show Solution
@@ -393,7 +393,7 @@ export default function App() {
         }}
         numRows={NUM_ROWS}
         borderClassName="border-2 border-black"
-        squareClassName={(key) => {
+        squareClassName={key => {
           let [r, c] = toArr(key)
           return c % 3 === 0 && r % 3 === 0
             ? `flex items-center justify-center border-t-black border-2 border-[#dadee6] border-l-black`

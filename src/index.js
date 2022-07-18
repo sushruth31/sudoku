@@ -8,7 +8,7 @@ const AppContext = React.createContext()
 
 function AppProvider({ children }) {
   const [key, setKey] = React.useState(0)
-  const resetApp = () => setKey((p) => p + 1)
+  const resetApp = () => setKey(p => p + 1)
   return (
     <AppContext.Provider value={{ resetApp }}>
       <React.Fragment key={key}>{children}</React.Fragment>
