@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react"
+import { useReset } from "."
 import Grid, { toArr, toKey } from "./grid"
 import { getPuzzle } from "./puzzles"
 
@@ -334,13 +335,28 @@ function gen(level) {
 
 export default function App() {
   let [level, setLevel] = useState("easy")
-  let { puzzle, solved } = useMemo(() => gen(level))
+  let { puzzle, solved } = useMemo(() => gen(level), [])
   let [gridValues, setGridValues] = useState(puzzle)
   let [selectedSquare, setSelectedSquare] = useState("0-0")
   let [highlightedSquares, setHighlightedSquares] = useState(new Map()) //key -> color
+  const resetApp = useReset()
   return (
     <div className="flex items-center p-4 flex-col justify-center">
       <div className="font-bold text-3xl mb-4">Let's Play Sodoku</div>
+      <div className="flex items-center">
+        <button
+          onClick={() => setGridValues((p) => (p === puzzle ? solved : puzzle))}
+          className="p-2 rounded bg-blue-400 text-white m-2"
+        >
+          Show Solution
+        </button>
+        <button
+          onClick={resetApp}
+          className="p-2 rounded bg-blue-400 text-white m-2"
+        >
+          New Game
+        </button>
+      </div>
       <Grid
         squareSize={80}
         onCellClick={(key, e) => {
