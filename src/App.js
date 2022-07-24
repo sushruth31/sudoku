@@ -331,8 +331,39 @@ function gen(level) {
   return attempt
 }
 
-function addToSetImmutable(val) {
-  return p => new Set(p).add(val)
+function addToSetImmutable(...vals) {
+  return p => {
+    let t = new Set(p)
+    for (let v of vals) {
+      t.add(v)
+    }
+    return t
+  }
+}
+
+function findErrorKeys(grid, key, val) {
+  let [r, c] = toArr(key)
+  let target = new Set()
+  for (let i = 0; i < NUM_ROWS; i++) {
+    if (grid[r][i] === val) {
+      target.add(toKey([r, i]))
+    }
+  }
+  for (let i = 0; i < NUM_ROWS; i++) {
+    if (grid[i][c] === val) {
+      target.add(toKey([i, c]))
+    }
+  }
+
+  for (let boxKey of getBoxKeys(key)) {
+    let [boxR, boxC] = toArr(boxKey)
+    if (grid[boxR][boxC] === val) {
+      target.add(toKey(boxR, boxC))
+    }
+  }
+  //add self to target
+  target.add(key)
+  return target
 }
 
 export default function App() {
@@ -430,12 +461,16 @@ export default function App() {
             //set grid values
             let num = cellKeyToNum(numDialCellKey)
             let [r, c] = toArr(selectedSquare)
+            let grid = mapToGrid(gridValues)
             //highlight red if not a valid placement
             if (
               solved.get(selectedSquare) !== num ||
-              !isValidPlacement(mapToGrid(gridValues), r, c, num)
+              !isValidPlacement(grid, r, c, num)
             ) {
-              setErrorVals(addToSetImmutable(selectedSquare))
+              //set error vals
+              setErrorVals(
+                addToSetImmutable(...findErrorKeys(grid, selectedSquare, num))
+              )
             }
             setGridValues(p => {
               return new Map(p).set(selectedSquare, num)
