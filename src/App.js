@@ -1,6 +1,7 @@
-import { useMemo, useState } from "react"
+import * as React from "react"
 import { useReset } from "."
 import Grid, { toArr, toKey } from "./grid"
+import NumberDial, { cellKeyToNum } from "./numberDial"
 import { getPuzzle } from "./puzzles"
 
 export const NUM_COLS = 9
@@ -258,10 +259,7 @@ function generatePuzzle(level) {
   solved = isFilled(solved) ? arrToMap(solved) : generatePuzzle(level)
   puzzle = recreatePuzzle(mapToGrid(solved), numZeros)
   //recreate the puzzle with the same number of zeros
-  if (solved instanceof Map && puzzle instanceof Map) {
-    return { solved, puzzle }
-  }
-  return generatePuzzle(level)
+  return { solved, puzzle }
 }
 
 function mapToGrid(map) {
@@ -269,7 +267,7 @@ function mapToGrid(map) {
   for (let i = 0; i < NUM_COLS; i++) {
     for (let j = 0; j < NUM_ROWS; j++) {
       let key = toKey([i, j])
-      t[i][j] = map.get(key)
+      t[i][j] = map.get(key) ?? 0
     }
   }
   return t
@@ -333,13 +331,30 @@ function gen(level) {
   return attempt
 }
 
+function addToSetImmutable(val) {
+  return p => new Set(p).add(val)
+}
+
 export default function App() {
-  let [level, setLevel] = useState("easy")
-  let { puzzle, solved } = useMemo(() => gen(level), [])
-  let [gridValues, setGridValues] = useState(puzzle)
-  let [selectedSquare, setSelectedSquare] = useState("0-0")
-  let [highlightedSquares, setHighlightedSquares] = useState(new Map()) //key -> color
-  const resetApp = useReset()
+  let [level, setLevel] = React.useState("easy")
+  //todo call async
+  let { puzzle, solved } = React.useMemo(() => gen(level), [])
+  let [gridValues, setGridValues] = React.useState(puzzle)
+  let [selectedSquare, setSelectedSquare] = React.useState("0-0")
+  let [highlightedSquares, setHighlightedSquares] = React.useState(new Map()) //key -> color
+  let resetApp = useReset()
+  let [errorVals, setErrorVals] = React.useState(new Set())
+  let [userEnteredVals, setUserEnteredVals] = React.useState(new Set())
+
+  function triggerHighlightSquares(val, map = new Map(highlightedSquares)) {
+    gridValues.forEach((v, k) => {
+      if (v === val) {
+        map.set(k, "#bbd1e7")
+      }
+    })
+    setHighlightedSquares(map)
+  }
+
   return (
     <div className="flex items-center p-4 flex-col justify-center">
       <div className="font-bold text-3xl mb-4">Let's Play Sodoku</div>
@@ -357,53 +372,80 @@ export default function App() {
           New Game
         </button>
       </div>
-      <Grid
-        squareSize={80}
-        onCellClick={(key, e) => {
-          let map = new Map()
-          setSelectedSquare(key)
-          for (let k of calcuateHighlightedSquares(key)) {
-            map.set(k, "#dee8f1")
-          }
-          //deterimine which keys of same value to highlight
-          gridValues.forEach((v, k) => {
-            if (v === gridValues.get(key)) {
-              map.set(k, "#bbd1e7")
+      <div className="flex w-full items-end justify-center">
+        <Grid
+          squareSize={80}
+          onCellClick={(key, e) => {
+            let map = new Map()
+            setSelectedSquare(key)
+            for (let k of calcuateHighlightedSquares(key)) {
+              map.set(k, "#dee8f1")
             }
-          })
-
-          setHighlightedSquares(map)
-        }}
-        numCols={NUM_COLS}
-        renderCell={({ cellKey }) => {
-          let val = gridValues.get(cellKey)
-          return (
-            <div
-              style={{
-                backgroundColor:
-                  selectedSquare === cellKey
-                    ? "#b3d9fa"
-                    : highlightedSquares.get(cellKey),
-              }}
-              className="text-5xl w-full h-full flex items-center justify-center"
-            >
-              {val}
-            </div>
-          )
-        }}
-        numRows={NUM_ROWS}
-        borderClassName="border-2 border-black"
-        squareClassName={key => {
-          let [r, c] = toArr(key)
-          return c % 3 === 0 && r % 3 === 0
-            ? `flex items-center justify-center border-t-black border-2 border-[#dadee6] border-l-black`
-            : c % 3 === 0
-            ? `flex items-center justify-center  border-2 border-[#dadee6] border-l-black`
-            : r % 3 === 0
-            ? `flex items-center justify-center  border-2 border-[#dadee6] border-t-black`
-            : `flex items-center justify-center border border-[#dadee6] `
-        }}
-      />
+            //deterimine which keys of same value to highlight
+            triggerHighlightSquares(gridValues.get(key), map)
+          }}
+          numCols={NUM_COLS}
+          renderCell={({ cellKey }) => {
+            let val = gridValues.get(cellKey)
+            return (
+              <div
+                style={{
+                  backgroundColor:
+                    selectedSquare === cellKey
+                      ? "#b3d9fa"
+                      : errorVals.has(cellKey)
+                      ? "red"
+                      : highlightedSquares.get(cellKey),
+                }}
+                className="text-5xl w-full h-full flex items-center justify-center"
+              >
+                <div
+                  style={{
+                    color: userEnteredVals.has(cellKey) ? "blue" : "black",
+                  }}
+                >
+                  {val}
+                </div>
+              </div>
+            )
+          }}
+          numRows={NUM_ROWS}
+          borderClassName="border-2 border-black"
+          squareClassName={key => {
+            let [r, c] = toArr(key)
+            return c % 3 === 0 && r % 3 === 0
+              ? `flex items-center justify-center border-t-black border-2 border-[#dadee6] border-l-black`
+              : c % 3 === 0
+              ? `flex items-center justify-center  border-2 border-[#dadee6] border-l-black`
+              : r % 3 === 0
+              ? `flex items-center justify-center  border-2 border-[#dadee6] border-t-black`
+              : `flex items-center justify-center border border-[#dadee6] `
+          }}
+        />
+        <NumberDial
+          onCellClick={numDialCellKey => {
+            if (!selectedSquare || gridValues.get(selectedSquare)) {
+              return
+            }
+            //set grid values
+            let num = cellKeyToNum(numDialCellKey)
+            let [r, c] = toArr(selectedSquare)
+            //highlight red if not a valid placement
+            if (
+              solved.get(selectedSquare) !== num ||
+              !isValidPlacement(mapToGrid(gridValues), r, c, num)
+            ) {
+              setErrorVals(addToSetImmutable(selectedSquare))
+            }
+            setGridValues(p => {
+              return new Map(p).set(selectedSquare, num)
+            })
+            setUserEnteredVals(addToSetImmutable(selectedSquare))
+            //highlight all the same numbers
+            triggerHighlightSquares(num)
+          }}
+        />
+      </div>
     </div>
   )
 }

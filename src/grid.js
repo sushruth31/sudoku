@@ -23,7 +23,7 @@ export default function Grid({
       {Array.from(Array(numRows)).map((_, rowI) => {
         return (
           <>
-            <div className="flex" key={rowI}>
+            <div className="flex items-center justify-center" key={rowI}>
               {Array.from(Array(numCols)).map((_, colI) => {
                 let cellKey = toKey([rowI, colI])
                 return (
